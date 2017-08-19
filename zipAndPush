@@ -4,15 +4,17 @@
 # Usage:
 #  ./zipAndPush [profile]
 # profile - optional AWS profile
+##############################################
 
-# Configure here
+## Configurations
 # S3
 s3_bucket="capitalone-hackathon1"
 zip_name="getmeoutofhere.zip"
 # Lambda
 lambda_function="getMeOutOfHere"
 
-#####
+##############################################
+# todo: change to flags, -n lambda_name -b s3bucket -z zipfilename -p profile
 if [ -z "$1" ]
   then
     profile="default"
@@ -21,17 +23,20 @@ if [ -z "$1" ]
     echo "Using aws profile ${1}"
 fi
 
-# npm install
+## npm install
 npm install
 
-# zip js files for lambda
+## zip js files for lambda
 zip -r -q ${zip_name} *.js package.json node_modules
 
-# push to AWS Bucket
+## push to AWS Bucket
+# zip
 aws s3 cp ${zip_name} s3://${s3_bucket} --profile ${profile}
+# other assets
 aws s3 cp tableflip.png s3://${s3_bucket} --profile ${profile}
+
 echo "Uploaded to https://s3.amazonaws.com/${s3_bucket}/${zip_name}"
 
-# update lambda
+## update lambda
 aws lambda update-function-code --function-name ${lambda_function} --s3-bucket ${s3_bucket} --s3-key ${zip_name} --profile ${profile}
 echo "Updated Lambda function."
