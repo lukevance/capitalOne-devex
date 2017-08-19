@@ -6,6 +6,8 @@ Ask Alexa for a lifeline and get personalized recommendations for a relaxing vac
 
 ```(╯°□°）╯︵ ┻━┻)```
 
+_Changing the world by disrupting the hyper-localized, on-demand, micro-travel vacation industry!_
+
 
 ## Dev Setup
 
