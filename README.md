@@ -12,13 +12,14 @@ Ask Alexa for a lifeline and get personalized recommendations for a relaxing vac
 Prerequisites
 
 * node, npm, aws cli
+* s3 bucket
 
 
 ### Create an AWS Lambda
 
 * Log into [console.aws.amazon.com](https://console.aws.amazon.com/lambda/home) and create a new Lambda. Make sure you're in N. Virginia region!
-* zip it and push it to s3 (see bash script `zipAndPush`)
-* get the ARN from the top right corner, something like `arn:aws:lambda:us-east-1:567827005632:function:getMeOutOfHere`
+* zip it and push it to s3 (see bash script `zipAndPush`; replace the `s3_bucket` as necessary)
+* get the ARN from the top right corner, it'll be something like `arn:aws:lambda:us-east-1:567827005632:function:getMeOutOfHere` - will be used in the Alexa Skill
 
 ### Create an Alexa Skill
 
