@@ -7,6 +7,7 @@
 
 # Configure here
 s3_bucket="capitalone-hackathon1"
+zip_name="getmeoutofhere.zip"
 
 #####
 if [ -z "$1" ]
@@ -17,8 +18,13 @@ if [ -z "$1" ]
     echo "Using aws profile ${1}"
 fi
 
+# npm install
+npm install
+
 # zip js files for lambda
-zip -r -q getmeoutofhere.zip *.js package.json node_modules
+zip -r -q ${zip_name} *.js package.json node_modules
 
 # push to AWS Bucket
-aws s3 cp getmeoutofhere.zip s3://${s3_bucket} --profile ${profile}
+aws s3 cp ${zip_name} s3://${s3_bucket} --profile ${profile}
+
+echo "Uploaded to https://s3.amazonaws.com/${s3_bucket}/${zip_name}"
