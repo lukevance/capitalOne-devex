@@ -1,9 +1,3 @@
-// const http = require('http');
-// const fetch = require('fetch');
-
-let client_id = 'vgw3sf4f8nq3b98i1gdfr8wpx4gpty0ska52';
-let client_secret = 'eb5f6rda6v0d1ld8y4fymkudo86gorrc47cj';
-
 const getRewards = require('./rewardsData.js')();
 
 // Sample Response from rewards/accounts
@@ -19,10 +13,11 @@ const rewardsDetails = getRewards.details;
 var languageStrings = {
     'en': {
         'translation': {
-            'WELCOME': "Welcome to the Breakfast Sandwich Recipe skill. ",
-            'TITLE': "Breakfast Sandwich",
-            'HELP': "This skill will show you how to make a breakfast sandwich.  You can ask for the list of ingredients, or just say begin cooking if you are ready. Once you are cooking, just say Next to advance to the next step in the recipe. You can also pause the recipe at any time by saying Pause.",
-            'STOP': "Okay, see you next time! "
+            'WELCOME': "Welcome to your great escape!",
+            'TITLE': "Get me out of here",
+            'HELP': "This skill will recommend a great vacation based on your Capital One rewards.",
+            'STOP': "Okay, see you next time! ",
+            'WORKING': "I'm checking flight prices for you!"
         }
     }
     // , 'de-DE': { 'translation' : { 'WELCOME'   : "Guten Tag etc." } }
@@ -73,41 +68,68 @@ exports.handler = function(event, context, callback) {
 
 var handlers = {
     'LaunchRequest': function() {
-        if (!this.attributes['currentStep']) {
+        //TO DO: add options for random selection
+        let prompt = ' How soon are you trying to get out?';
 
-            var say = this.t('WELCOME') + ' ' + this.t('HELP');
-            this.emit(':askWithCard', say, say, this.t('TITLE'), this.t('WELCOME'), welcomeCardImg);
-
-        } else {
-
-            var say = 'Welcome back.  You were on step ' +
-                this.attributes['currentStep'] +
-                '. Say restart if you want to start over. ' +
-                ' Ready to continue with step ' +
-                (parseInt(this.attributes['currentStep']) + 1).toString() + '?';
-            this.emit(':askWithCard', say, say, 'Continue?', say);
-        }
-
+        var say = this.t('WELCOME') + ' ' + this.t('HELP') + prompt;
+        this.emit(':askWithCard', say, say, this.t('TITLE'), this.t('WELCOME'), welcomeCardImg);
     },
+    'TimeframeIntent': function() {
+        let urgency = this.event.request.intent.slots.when.value;
 
-    'IngredientsIntent': function() {
-
-        var say = "";
-        var list = [];
-        for (var i = 0; i < data.ingredients.length; i++) {
-            var item = data.ingredients[i];
-            list.push(item.qty + ' ' + item.units + ' ' + item.name);
+        // get number of locations for when value
+        let numOfOptions;
+        switch (urgency) {
+            case "high":
+                // get 1-3 destinations
+                numOfOptions = getRandomInt(1, 4);
+                break;
+            case "med":
+                // get 5-10 destinations
+                numOfOptions = getRandomInt(4, 10);
+                break;
+            case "low":
+                // get lots of destinations
+                numOfOptions = getRandomInt(8, 40);
+            default:
+                numOfOptions = 1;
+                break;
         }
-        say += sayArray(list, 'and');
-        say = 'The ingredients you will need are, ' + say + '. Are you ready to cook? ';
+        let destOptions = getDestinations
+        let destAttr = getDestinations.map(dest)
+            // TO DO filter out for unique
 
-        var cardlist = list.toString().replace(/\,/g, '\n');
 
-        this.emit(':askWithCard', say, 'Say yes if you are ready to begin cooking the recipe.', this.t('TITLE') + ' shopping list', cardlist);
+        // aggregate attributes off list of destinations
+        // if (destinations.length > 1) {
+        //     let destOptions = "";
+        //     destinations.forEach((dest, i) => {
+        //         dest.attributes.forEach(attr => {
+        //             if (i < destinations.length + 1){
+        //                 destOptions = destOptions + ", " + attr;    
+        //             } else {
+        //                 destOptions = destOptions + ", or " + attr;
+        //             }
+        //         });
+        //     });
+        // }
 
+        let question = "What kind of destination would you like? ";
+
+        if (destOptions.length === 1) {
+            this.emit(':ask', 'Based upon your Capital One Rewards, you can go to ' + randomArrayElement(destOptions) + 'this week!');
+        } else if (options.length > 1) {
+            this.emit(':ask', 'Based upon your Capital One Rewards, I found ' + destOptions.length + ' for you to leave this week' + question + " You can say " + sayArray(destAttr));
+        }
     },
-    'CookIntent': function() {
-        this.emit('AMAZON.NextIntent');
+    'LocationSearch': function() {
+        let destAttribute = this.event.request.intent.slots.kind;
+
+        let destination =
+
+
+
+            this.emit(':askWithCard', messageIntro + mileageStatement + confirmBook);
     },
     'AMAZON.YesIntent': function() {
 
@@ -121,51 +143,20 @@ var handlers = {
     'AMAZON.PauseIntent': function() {
         this.emit(':tell', 'Okay, you can come back to this skill to pick up where you left off.');
     },
+    // 'AMAZON.RepeatIntent': function() {
+    //     if (!this.attributes['currentStep']) {
+    //         this.attributes['currentStep'] = 1;
+    //     } else {
+    //         this.attributes['currentStep'] = this.attributes['currentStep'] - 1;
+    //     }
 
-    'AMAZON.NextIntent': function() {
-        if (!this.attributes['currentStep']) {
-            this.attributes['currentStep'] = 1;
-        } else {
-            this.attributes['currentStep'] = this.attributes['currentStep'] + 1;
-        }
-        var currentStep = this.attributes['currentStep'];
-        var say = 'Step ' + currentStep + ', ' + data.steps[currentStep - 1];
-        var sayOnScreen = data.steps[currentStep - 1];
+    //     this.emit('AMAZON.NextIntent');
 
-        if (currentStep == data.steps.length) {
-
-            delete this.attributes['currentStep'];
-            this.emit(':tellWithCard', say + '. <say-as interpret-as="interjection">bon appetit</say-as>', this.t('TITLE'), say + '\nBon Appetit!', welcomeCardImg);
-
-        } else {
-
-            this.emit(':askWithCard', say, 'You can say Pause, Stop, or Next.', 'Step ' + currentStep, sayOnScreen);
-        }
-
-    },
-
-    'AMAZON.RepeatIntent': function() {
-        if (!this.attributes['currentStep']) {
-            this.attributes['currentStep'] = 1;
-        } else {
-            this.attributes['currentStep'] = this.attributes['currentStep'] - 1;
-        }
-
-        this.emit('AMAZON.NextIntent');
-
-    },
+    // },
     'AMAZON.HelpIntent': function() {
-
-        if (!this.attributes['currentStep']) { // new session
-            this.emit(':ask', this.t('HELP'));
-        } else {
-            var currentStep = this.attributes['currentStep'];
-            this.emit(':ask', 'you are on step ' + currentStep + ' of the ' + this.t('TITLE') + ' recipe. Say Next to continue or Ingredients to hear the list of ingredients.');
-        }
-
+        this.emit(':ask', this.t('HELP'));
     },
     'AMAZON.StartOverIntent': function() {
-        delete this.attributes['currentStep'];
         this.emit('LaunchRequest');
     },
     'AMAZON.CancelIntent': function() {
@@ -224,4 +215,10 @@ function randomArrayElement(array) {
     var i = 0;
     i = Math.floor(Math.random() * array.length);
     return (array[i]);
+}
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
 }
