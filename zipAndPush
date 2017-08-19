@@ -1,0 +1,24 @@
+#!/bin/bash
+# zip and push to s3
+#
+# Usage:
+#  ./zipAndPush [profile]
+# profile - optional AWS profile
+
+# Configure here
+s3_bucket="capitalone-hackathon1"
+
+#####
+if [ -z "$1" ]
+  then
+    profile="default"
+  else
+    profile=${1}
+    echo "Using aws profile ${1}"
+fi
+
+# zip js files for lambda
+zip -r -q getmeoutofhere.zip *.js package.json node_modules
+
+# push to AWS Bucket
+aws s3 cp getmeoutofhere.zip s3://${s3_bucket} --profile ${profile}
