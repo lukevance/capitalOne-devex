@@ -23,26 +23,32 @@ var languageStrings = {
     // , 'de-DE': { 'translation' : { 'WELCOME'   : "Guten Tag etc." } }
 };
 var data = {
-    // TODO: Replace this data with your own.
-    "ingredients": [
-        { "name": "bread", "qty": 2, "units": "pieces of" },
-        { "name": "egg", "qty": 1, "units": "" },
-        { "name": "cheese", "qty": 1, "units": "slice of" }
-    ],
-    "steps": [
-        "Heat a frying pan on your stove over medium heat.",
-        "Crack an egg in the skillet and heat until the egg becomes firm.",
-        "Flip the egg with a spatula.",
-        "Lay the cheese on top of the egg.",
-        "Using a spatula, remove egg and cheese and place on one piece of bread.",
-        "Place second piece of bread over the egg and cheese.",
-        "Serve."
+    "destinations": [
+        { "name": "maui", "miles": "20000", "type": "beach" },
+        { "name": "los angeles", "miles": "10000", "type": "urban" },
+        { "name": "orlando", "miles": "15000", "type": "beach" },
+        { "name": "toronto", "miles": "30000", "type": "cold" },
+        { "name": "portland", "miles": "20000", "type": "cold" },
+        { "name": "anchorage", "miles": "30000", "type": "cold" },
+        { "name": "chicago", "miles": "10000", "type": "urban" },
+        { "name": "new york", "miles": "20000", "type": "artsy" },
+        { "name": "vancouver", "miles": "30000", "type": "artsy" },
+        { "name": "albuquerque", "miles": "10000", "type": "mountains" },
+        { "name": "houston", "miles": "15000", "type": "urban" },
+        { "name": "nashville", "miles": "12000", "type": "artsy" },
+        { "name": "DC", "miles": "20000", "type": "east" },
+        { "name": "charlotte", "miles": "10000", "type": "mountains" },
+        { "name": "st louis", "miles": "15000", "type": "urban" },
+        { "name": "san francisco", "miles": "20000", "type": "artsy" },
+        { "name": "salt lake city", "miles": "10000", "type": "mountains" },
+        { "name": "las vegas", "miles": "15000", "type": "urban" },
     ]
+
 };
 
 var welcomeCardImg = {
-    smallImageUrl: 'https://s3.amazonaws.com/webappvui/img/breakfast_sandwich_small.png',
-    largeImageUrl: 'https://s3.amazonaws.com/webappvui/img/breakfast_sandwich_large.png'
+    smallImageUrl: 'https://s3.amazonaws.com/capitalone-hackathon/tableflip.png',
+    largeImageUrl: 'https://s3.amazonaws.com/capitalone-hackathon/tableflip.png'
 };
 // 2. Skill Code =======================================================================================================
 
@@ -66,6 +72,20 @@ exports.handler = function(event, context, callback) {
 
 };
 
+function resolveUrgency(phrase) {
+    // arrays
+    let low = ['whenever', 'in a month', 'in a few months', 'later'];
+    let high = ['now', 'immediately', 'tomorrow', 'this week', 'today'];
+
+    let urgency = "medium";
+    if (low.indexOf(phrase) >= 0) {
+        urgency = "low";
+    } else if (high.indexOf(phrase) >= 0) {
+        urgency = "high";
+    }
+    return urgency;
+}
+
 var handlers = {
     'LaunchRequest': function() {
         //TO DO: add options for random selection
@@ -75,8 +95,9 @@ var handlers = {
         this.emit(':askWithCard', say, say, this.t('TITLE'), this.t('WELCOME'), welcomeCardImg);
     },
     'TimeframeIntent': function() {
-        let urgency = this.event.request.intent.slots.when.value;
+        let phrase = this.event.request.intent.slots.when.value;
 
+        let urgency = resolveUrgency(phrase);
         // get number of locations for when value
         let numOfOptions;
         switch (urgency) {
@@ -95,41 +116,41 @@ var handlers = {
                 numOfOptions = 1;
                 break;
         }
-        let destOptions = getDestinations
-        let destAttr = getDestinations.map(dest)
-            // TO DO filter out for unique
-
-
-        // aggregate attributes off list of destinations
-        // if (destinations.length > 1) {
-        //     let destOptions = "";
-        //     destinations.forEach((dest, i) => {
-        //         dest.attributes.forEach(attr => {
-        //             if (i < destinations.length + 1){
-        //                 destOptions = destOptions + ", " + attr;    
-        //             } else {
-        //                 destOptions = destOptions + ", or " + attr;
-        //             }
-        //         });
-        //     });
-        // }
+        // get Destinations
+        let destAttr = data.destinations.map(dest => dest.type);
+        let uniqueAttributes = uniqueFromArray(destAttr).splice(0, numOfOptions);
 
         let question = "What kind of destination would you like? ";
 
-        if (destOptions.length === 1) {
-            this.emit(':ask', 'Based upon your Capital One Rewards, you can go to ' + randomArrayElement(destOptions) + 'this week!');
-        } else if (options.length > 1) {
-            this.emit(':ask', 'Based upon your Capital One Rewards, I found ' + destOptions.length + ' for you to leave this week' + question + " You can say " + sayArray(destAttr));
+        if (numOfOptions === 1) {
+            let youAreGoing = randomArrayElement(data.destinations);
+            this.emit(':ask', 'Based upon your Capital One Rewards, you can go to ' + youAreGoing.name + ' this week!');
+        } else if (numOfOptions > 1) {
+            this.emit(':ask', 'Based upon your Capital One Rewards, I found ' + numOfOptions + ' destinations for you to get to this week. What kind of destination would you like? You can say ' + sayArray(uniqueAttributes, "or"));
         }
     },
     'LocationSearch': function() {
-        let destAttribute = this.event.request.intent.slots.kind;
 
-        let destination =
+        function okDestinationPhraseOptions(destination) {
+            // list of phrases
+            var okDestinations = [
+                "fantastic, let's go to " + destination + "!",
+                "Ok, let's do this! " + destination + ", here we go!",
+            ];
+            return randomArrayElement(okDestinations);
+        }
 
+        let destAttribute = this.event.request.intent.slots.type.value;
+        let filteredDests = [];
+        data.destinations.forEach(dest => {
+            if (dest.type === destAttribute) {
+                filteredDests.push(dest);
+            }
+        });
 
+        let destination = randomArrayElement(filteredDests);
 
-            this.emit(':askWithCard', messageIntro + mileageStatement + confirmBook);
+        this.emit(':askWithCard', okDestinationPhraseOptions(destination.name) + " You are spending " + destination.miles + " of your rewards miles. Tickets are on their way!");
     },
     'AMAZON.YesIntent': function() {
 
@@ -221,4 +242,8 @@ function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+}
+
+function uniqueFromArray(redundantArray) {
+    return [...new Set(redundantArray)];
 }
